@@ -1,0 +1,144 @@
+;-- =========================================================
+;-- Company      : Unversity of Glasgow, Comuting Science
+;-- Author:        Syed Waqar Nabi
+;-- 
+;-- Create Date  : 2018.10.16
+;-- Project Name : TyTra
+;--
+;-- Dependencies : 
+;--
+;-- Revision     : 
+;-- Revision 0.01. File Created
+;-- 
+;-- Conventions  : 
+;-- =========================================================
+;--
+;-- =========================================================
+;-- General Description
+;-- ---------------------------------------------------------
+;-- Tytra-IR file for a simple example for group MSc project
+;-- 
+;-- This is TIR-17 version
+;-- =========================================================
+
+;-- **************************************************
+;--            *** MANAGE-IR ***  
+;-- **************************************************
+;-- C-style macros 
+#define NLinear 10
+
+; ----------------------------------------------------------
+; -- ** kernelInput
+; ----------------------------------------------------------
+define void @kernelInput  ( i32 %aIn0
+                          , i32 %aIn1
+                          , i32 %ch00
+                          , i32 %ch01
+                          ) pipe {
+  i32 %ch00 = add i32 %aIn0, 0
+  i32 %ch01 = add i32 %aIn1, 0
+  ret void
+}
+
+; ----------------------------------------------------------
+; -- ** kernelCompute
+; ----------------------------------------------------------
+define void @kernelCompute ( i32 %ch00 
+                           , i32 %ch01
+                           , i32 %ch1
+                           ) pipe {
+  i32 %ch1  = add i32 %ch00, %ch01
+  ret void
+}
+
+; ----------------------------------------------------------
+; -- ** kernelOutput
+; ----------------------------------------------------------
+define void @kernelOutput ( i32 %ch1 
+                          , i32 %aOut
+                          ) pipe {
+  i32 %aOut  = add i32 %ch1, 0
+  ret void
+}
+
+
+; ----------------------------------------------------------
+; -- ** kernelTop
+; ----------------------------------------------------------
+define void @kernelTop  ( i32 %aIn0
+                        , i32 %aIn1
+                        , i32 %aOut
+                        ) pipe
+{
+  call @kernelInput ( i32 %aIn0
+                    , i32 %aIn1
+                    , i32 %ch00
+                    , i32 %ch01
+                    ) 
+
+  call @kernelCompute ( i32 %ch00
+                      , i32 %ch01
+                      , i32 %ch1
+                      ) 
+
+  call @kernelOutput  ( i32 %ch1
+                      , i32 %aOut
+                      ) 
+  ret void
+}
+
+; ----------------------------------------------------------
+; -- ** MAIN
+; ----------------------------------------------------------
+
+;--The TyTra-IR is limited to the DEVICE-CODE on the kernel
+;--So while we do "declare" variables in the global-memory space
+;--we are not worried about initializing (or post-processing) them
+;--as that is assumed to happen outside the scope of this device-side
+;--program
+
+define void @main () {
+;-- MEMORY OBJECTS
+;-- in LLVM, all "memory objects" are accessed using pointers
+;-- addrspace(1) is the global address space, so these
+;-- arrays are created in the Global Memory
+
+ %aIn0  = alloca [NLinear x i32], addrspace(1) 
+ %aIn1  = alloca [NLinear x i32], addrspace(1) 
+ %aOut  = alloca [NLinear x i32], addrspace(1)  
+
+  ;-- *CREATING STREAMS FROM MEMORIES* 
+  ;-- The !tir.mem.<property_name> !<property_value> pair
+  ;-- is used to specify stream properties
+  ;-- being created. In these cases, it is a simple 1d stream
+  ;-- from that memory object
+  ;-- Note that stream directions are from the P.O.V of device 
+
+ 
+ %aIn0_stream_load = streamread i32, i32*  %aIn0 
+                   , !tir.stream.type   !stream1d
+                   , !tir.stream.size   !NLinear
+                   , !tir.stream.saddr  !0
+                   , !tir.stream.stride !1
+
+ %aIn1_stream_load = streamread i32, i32*  %aIn1
+                   , !tir.stream.type   !stream1d
+                   , !tir.stream.size   !NLinear
+                   , !tir.stream.saddr  !0
+                   , !tir.stream.stride !1
+
+  
+  streamwrite i32 %aOut_stream_store, i32* %aOut
+                    , !tir.stream.type   !stream1d
+                    , !tir.stream.saddr  !0
+                    , !tir.stream.size   !NLinear
+                    , !tir.stream.stride !1
+
+  ;--call the top level kernel and pass it the streams
+  call @kernelTop ( i32 %aIn0_stream_load
+                  , i32 %aIn1_stream_load
+                  , i32 %aOut_stream_store
+                  )
+ 
+  ret void
+}

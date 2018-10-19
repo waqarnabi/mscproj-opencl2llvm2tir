@@ -1,0 +1,42 @@
+Waqar Nabi, Glasgow, Oct 2018
+
+=====
+ABOUT
+=====
+A barebones opencl synthetic application to show a basic kernel with pipes
+
+* Intended targets are FPGAs, but can be extended for GPUs and other OPenCL devices. 
+* However, for this code, the code compatibility and build files are for CPUs only as that is enough
+for the project's scope.
+
+
+=============
+REQUIREMENTS
+=============
+
+1. For Intel CPU targets, you need Intel's OpenCL drivers and runtime installed, with OpenCL version 2.1. You can get it from here:
+https://software.intel.com/en-us/articles/opencl-drivers#latest_linux_SDK_release
+
+=====
+BUILD
+=====
+
+CPU TARGET
+-----------------------
+
+a) baseline (no channels):
+> cd build_CPU
+> make
+> ./host.exe
+
+b) channelized:
+> cd build_CPU
+> make CHANNELS=1
+> ./host.exe
+
+
+=====
+NOTES
+=====
+DEBUG:: (kernel echoes messages to the screen)
+- CPU/GPU is *always* run in debug mode.
