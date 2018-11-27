@@ -2,7 +2,7 @@
 //Problem Size
 //-----------------
 //Make sure it matches size in main.cpp
-#define SIZE 1//  should really be very large
+#define SIZE      10 //  should really be very large
 
 //comment if you don't want to see debug messages
 //#define DEBUG
@@ -28,19 +28,22 @@ int get_pipe_num_packets(int a){return a;}
 
 
 
+
+
+
 //------------------------------------------
-// Read memory kernel (scalar version)
+// Read memory kernel
 //------------------------------------------
-__kernel void kernelInput ( int aIn0
-                          , int aIn1
+__kernel void kernelInput ( __global int * restrict aIn0
+                          , __global int * restrict aIn1
                           , write_only pipe int     ch00
                           , write_only pipe int     ch01
                           ) {
   int data0, data1;
-  //for(int i=0; i<SIZE; i++) {
+  for(int i=0; i<SIZE; i++) {
     //read from global memory
-    data0 = aIn0;
-    data1 = aIn1;
+    data0 = aIn0[i];
+    data1 = aIn1[i];
     
     //write to channel
     write_pipe(ch00, &data0);
@@ -48,7 +51,7 @@ __kernel void kernelInput ( int aIn0
     #ifdef DEBUG    
       printf("DEV::kernelInput: i = %d, written to ch0: %d\n", i, data);
     #endif
-  //}
+  }
 }//() 
 
 
@@ -66,7 +69,7 @@ __kernel void kernelCompute (
   int i; 
 
 
-  //for(i=0; i < SIZE; i++) {
+  for(i=0; i < SIZE; i++) {
     //read from channels
     read_pipe(ch00, &dataIn0);
     read_pipe(ch01, &dataIn1);
@@ -82,26 +85,26 @@ __kernel void kernelCompute (
     #ifdef DEBUG    
       printf("DEV::kernelCompute: i = %d, written to ch1: %d\n", i, dataOut);
     #endif
-  //}
+  }
 }//()
 
 
 //------------------------------------------
 // Write memory kernel
 //------------------------------------------
-__kernel void kernelOutput( int aOut
+__kernel void kernelOutput( __global int * restrict aOut
                           , read_only pipe int ch1
                           ) {
   int data;
-  //for (int i=0; i < SIZE; i++) {
+  for (int i=0; i < SIZE; i++) {
     //read from channel
-    //while(get_pipe_num_packets(ch1)==0); //busy-wait until packet available in the pipe
+    while(get_pipe_num_packets(ch1)==0); //busy-wait until packet available in the pipe
     read_pipe(ch1, &data);
     #ifdef DEBUG    
       printf("DEV::kernelOutput: i = %d, read from ch1: %d\n", i, data);
     #endif  
     
     //write to global mem
-    aOut = data;
-  //}
+    aOut[i] = data;
+  }
 }//()
