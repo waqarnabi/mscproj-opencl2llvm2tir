@@ -35,8 +35,8 @@ define void @kernelInput  ( i32 %aIn0
                           , i32 %ch00
                           , i32 %ch01
                           ) pipe {
-  i32 %ch00 = add i32 %aIn0, 0
-  i32 %ch01 = add i32 %aIn1, 0
+  i32 %ch00 = load i32 %aIn0
+  i32 %ch01 = load i32 %aIn1
   ret void
 }
 
@@ -57,7 +57,7 @@ define void @kernelCompute ( i32 %ch00
 define void @kernelOutput ( i32 %ch1 
                           , i32 %aOut
                           ) pipe {
-  i32 %aOut  = add i32 %ch1, 0
+  i32 %aOut  = load i32 %ch1
   ret void
 }
 
