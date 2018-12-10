@@ -89,7 +89,7 @@ __kernel void kernelCompute (
 //------------------------------------------
 // Write memory kernel
 //------------------------------------------
-__kernel void kernelOutput( int aOut
+__kernel void kernelOutput( int *aOut
                           , read_only pipe int ch1
                           ) {
   int data;
@@ -102,6 +102,6 @@ __kernel void kernelOutput( int aOut
     #endif  
     
     //write to global mem
-    aOut = data;
+    *aOut = data;
   //}
 }//()
